@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	docker "github.com/fsouza/go-dockerclient"
+	"net"
 	"time"
 )
 
@@ -47,9 +48,21 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 		}
 	}
 
-	// FIXME(rochacon): wait for port listen instead of time
-	time.Sleep(10 * time.Second)
+	// Wait for port listen
+	for x := 0; ; x++ {
+		addr := fmt.Sprintf("%s:%s", c.NetworkSettings.IPAddress, firstPort(c.NetworkSettings.Ports))
+		if conn, err := net.Dial("tcp", addr); err == nil {
+			conn.Close()
+			break
+		}
+		time.Sleep(1 * time.Second)
 
+		if x == 10 {
+			fmt.Printf("[%s] max connection retries exceeded\n", name)
+			container <- nil
+			return
+		}
+	}
 
 	fmt.Printf("[%s] Created\n", name)
 	container <- c
