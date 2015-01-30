@@ -1,8 +1,8 @@
 package main
 
 import (
+	"fmt"
 	docker "github.com/fsouza/go-dockerclient"
-	"log"
 	"time"
 )
 
@@ -13,7 +13,7 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 		return
 	}
 
-	log.Printf("[%s] Creating container\n", name)
+	fmt.Printf("[%s] Creating container\n", name)
 	c, err := dcli.CreateContainer(docker.CreateContainerOptions{
 		"",
 		&docker.Config{
@@ -23,48 +23,48 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 		nil,
 	})
 	if err != nil {
-		log.Println("DEBUG", err.Error())
+		fmt.Printf("[%s] %s\n", name, err.Error())
 		container <- nil
 		return
 	}
 
-	log.Printf("[%s] Starting container\n", name)
 	if err := dcli.StartContainer(c.ID, &docker.HostConfig{}); err != nil {
+		fmt.Printf("[%s] %s\n", name, err.Error())
 		container <- nil
 		return
 	}
 
-	log.Printf("[%s] Inspecting container\n", name)
 	c, err = dcli.InspectContainer(c.ID)
 	if err != nil {
+		fmt.Printf("[%s] %s\n", name, err.Error())
 		container <- nil
 		return
 	}
 
 	if cmds, ok := service.Hooks["pre-run"]; ok {
 		for _, cmd := range cmds {
-			log.Println("// TODO(rochacon): exec pre-run hook:", cmd)
+			fmt.Printf("[%s] TODO: exec pre-run hook: %s\n", name, cmd)
 		}
 	}
 
 	// FIXME(rochacon): wait for port listen instead of time
 	time.Sleep(10 * time.Second)
 
+
+	fmt.Printf("[%s] Created\n", name)
 	container <- c
 
-	log.Printf("[%s] Waiting for quit signal\n", name)
+	// Waiting for quit signal
 	<-quit
 
 	if cmds, ok := service.Hooks["post-run"]; ok {
 		for _, cmd := range cmds {
-			log.Println("// TODO(rochacon): exec post-run hook:", cmd)
+			fmt.Printf("[%s] TODO: exec post-run hook: %s\n", name, cmd)
 		}
 	}
 
-	log.Printf("[%s] Stopping container\n", name)
+	fmt.Printf("[%s] Removing container\n", name)
 	dcli.StopContainer(c.ID, 10)
-
-	log.Printf("[%s] Removing container\n", name)
 	dcli.RemoveContainer(docker.RemoveContainerOptions{ID: c.ID})
 
 	finished <- true

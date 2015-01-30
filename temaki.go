@@ -2,7 +2,7 @@
 // temaki - Test environment wrapper
 //
 // Examples:
-//     temaki # read command from .temaki.yml cmd entry
+//     temaki # read command from temaki.yml cmd entry
 //     temaki gradle test
 //     temaki mvn test
 //     temaki py.test ./tests/
@@ -17,7 +17,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"strings"
 	"text/template"
 )
 
@@ -27,6 +26,8 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	fmt.Println("---> Creating test environment for:", conf.Cmd)
 
 	cmd_env := []string{"GOPATH=/home/rochacon/dev"}
 	finished := make(chan bool, len(conf.Env))
@@ -57,15 +58,12 @@ func main() {
 		cmd_env = append(cmd_env, fmt.Sprintf("%s=%s", envvar, formatted.String()))
 	}
 
-	log.Println("---> Starting command:", conf.Cmd)
-	log.Println("     Environment:", strings.Join(cmd_env, " "))
-
 	// exec command
 	cmd_splitted, _ := shlex.Split(conf.Cmd)
 	cmd := exec.Command(cmd_splitted[0], cmd_splitted[1:]...)
 	cmd.Env = cmd_env
-	cmd.Stdout = &PrefixWriter{w: os.Stdout, Prefix: "cmd: "}
-	cmd.Stderr = &PrefixWriter{w: os.Stderr, Prefix: "cmd: "}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		fmt.Println(err)
 	}
@@ -74,7 +72,7 @@ func main() {
 		quit <- true
 	}
 
-	log.Println("Waiting for shutdown of containers")
+	fmt.Println("---> Cleaning test environment")
 	for x := 0; x < len(conf.Env); x++ {
 		<-finished
 	}
