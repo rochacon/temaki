@@ -55,7 +55,7 @@ func main() {
 			panic(err)
 		}
 
-		fmt.Printf("  %s=%q\n", envvar, formatted.String())
+		fmt.Printf("     %s=%q\n", envvar, formatted.String())
 		cmd_env = append(cmd_env, fmt.Sprintf("%s=%s", envvar, formatted.String()))
 	}
 
