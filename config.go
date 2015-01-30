@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Config struct {
@@ -37,6 +38,11 @@ func ConfigFromFile() (*Config, error) {
 	if err := yaml.Unmarshal(config, &conf); err != nil {
 		return nil, err
 	}
+
+	if len(os.Args) > 1 {
+		conf.Cmd = strings.Join(os.Args[1:], " ")
+	}
+
 	return &conf, nil
 }
 
