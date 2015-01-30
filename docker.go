@@ -14,7 +14,6 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 		return
 	}
 
-	fmt.Printf("[%s] Creating container\n", name)
 	c, err := dcli.CreateContainer(docker.CreateContainerOptions{
 		"",
 		&docker.Config{
@@ -43,8 +42,8 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 	}
 
 	if cmds, ok := service.Hooks["pre-run"]; ok {
-		for _, cmd := range cmds {
-			fmt.Printf("[%s] TODO: exec pre-run hook: %s\n", name, cmd)
+		for range cmds {
+			// TODO: exec pre-run hook
 		}
 	}
 
@@ -64,19 +63,17 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 		}
 	}
 
-	fmt.Printf("[%s] Created\n", name)
 	container <- c
 
 	// Waiting for quit signal
 	<-quit
 
 	if cmds, ok := service.Hooks["post-run"]; ok {
-		for _, cmd := range cmds {
-			fmt.Printf("[%s] TODO: exec post-run hook: %s\n", name, cmd)
+		for range cmds {
+			// TODO: exec post-run hook
 		}
 	}
 
-	fmt.Printf("[%s] Removing container\n", name)
 	dcli.StopContainer(c.ID, 10)
 	dcli.RemoveContainer(docker.RemoveContainerOptions{ID: c.ID})
 

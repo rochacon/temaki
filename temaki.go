@@ -55,8 +55,11 @@ func main() {
 			panic(err)
 		}
 
+		fmt.Printf("  %s=%q\n", envvar, formatted.String())
 		cmd_env = append(cmd_env, fmt.Sprintf("%s=%s", envvar, formatted.String()))
 	}
+
+	fmt.Println("") // Break line before test suite output
 
 	// exec command
 	cmd_splitted, _ := shlex.Split(conf.Cmd)
@@ -67,6 +70,8 @@ func main() {
 	if err := cmd.Run(); err != nil {
 		fmt.Println(err)
 	}
+
+	fmt.Println("") // Break line after test suite output
 
 	for x := 0; x < len(conf.Env); x++ {
 		quit <- true
