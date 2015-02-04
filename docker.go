@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
-	docker "github.com/fsouza/go-dockerclient"
 	"net"
 	"time"
+
+	docker "github.com/fsouza/go-dockerclient"
+	"github.com/flynn/go-shlex"
 )
 
 func LaunchContainer(name string, service Service, container chan<- *docker.Container, quit <-chan bool, finished chan<- bool) {
@@ -42,8 +44,12 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 	}
 
 	if cmds, ok := service.Hooks["pre-run"]; ok {
-		for range cmds {
-			// TODO: exec pre-run hook
+		for _, cmd := range cmds {
+			if err := Exec(dcli, c.ID, cmd); err != nil {
+				fmt.Printf("[%s] pre-run: %s\n", name, err.Error())
+				container <- nil
+				return
+			}
 		}
 	}
 
@@ -69,8 +75,12 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 	<-quit
 
 	if cmds, ok := service.Hooks["post-run"]; ok {
-		for range cmds {
-			// TODO: exec post-run hook
+		for _, cmd := range cmds {
+			if err := Exec(dcli, c.ID, cmd); err != nil {
+				fmt.Printf("[%s] post-run: %s\n", name, err.Error())
+				container <- nil
+				return
+			}
 		}
 	}
 
@@ -80,8 +90,19 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 	finished <- true
 }
 
-func Exec(cID string, cfg docker.ExecProcessConfig) error {
-	return nil
+func Exec(dcli *docker.Client, cID, cmd string) error {
+	cmdsplt, err := shlex.Split(cmd)
+	if err != nil {
+		return err
+	}
+	exec, err := dcli.CreateExec(docker.CreateExecOptions{
+		Cmd:       cmdsplt,
+		Container: cID,
+	})
+	if err != nil {
+		return err
+	}
+	return dcli.StartExec(exec.ID, docker.StartExecOptions{})
 }
 
 func firstPort(ports map[docker.Port][]docker.PortBinding) string {
