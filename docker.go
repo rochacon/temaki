@@ -68,6 +68,7 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 			return
 		}
 	}
+	time.Sleep(1 * time.Second)
 
 	container <- c
 
