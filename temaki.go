@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"text/template"
+	"time"
 )
 
 func main() {
@@ -58,6 +59,10 @@ func main() {
 		fmt.Printf("     %s=%q\n", envvar, formatted.String())
 		cmd_env = append(cmd_env, fmt.Sprintf("%s=%s", envvar, formatted.String()))
 	}
+
+	// Wait one second before test suite
+	// This avoids some race conditions with container scripts
+	time.Sleep(1 * time.Second)
 
 	fmt.Println("") // Break line before test suite output
 
