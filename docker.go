@@ -43,16 +43,6 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 		return
 	}
 
-	if cmds, ok := service.Hooks["pre-run"]; ok {
-		for _, cmd := range cmds {
-			if err := Exec(dcli, c.ID, cmd); err != nil {
-				fmt.Printf("[%s] pre-run: %s\n", name, err.Error())
-				container <- nil
-				return
-			}
-		}
-	}
-
 	// Wait for port listen
 	for x := 0; ; x++ {
 		addr := fmt.Sprintf("%s:%s", c.NetworkSettings.IPAddress, firstPort(c.NetworkSettings.Ports))
@@ -69,11 +59,23 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 		}
 	}
 
+	// Execute pre-run hooks
+	if cmds, ok := service.Hooks["pre-run"]; ok {
+		for _, cmd := range cmds {
+			if err := Exec(dcli, c.ID, cmd); err != nil {
+				fmt.Printf("[%s] pre-run: %s\n", name, err.Error())
+				container <- nil
+				return
+			}
+		}
+	}
+
 	container <- c
 
 	// Waiting for quit signal
 	<-quit
 
+	// Execute post-run hooks
 	if cmds, ok := service.Hooks["post-run"]; ok {
 		for _, cmd := range cmds {
 			if err := Exec(dcli, c.ID, cmd); err != nil {
