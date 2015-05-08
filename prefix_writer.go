@@ -9,7 +9,18 @@ type PrefixWriter struct {
 	Prefix string
 }
 
+func NewPrefixWriter(w io.Writer, prefix string) *PrefixWriter {
+	return &PrefixWriter{
+		w:      w,
+		Prefix: prefix,
+	}
+}
+
 func (pw *PrefixWriter) Write(b []byte) (n int, err error) {
-	pw.w.Write([]byte(pw.Prefix + " "))
-	return pw.w.Write(b)
+	np, err := pw.w.Write([]byte(pw.Prefix + " "))
+	if err != nil {
+		return n, err
+	}
+	nb, err := pw.w.Write(b)
+	return np + nb, err
 }
