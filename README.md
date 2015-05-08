@@ -50,7 +50,7 @@ temaki go test -cover -v ./handlers/...
 
 ## TODO
 
-- [ ] Use `DOCKER_HOST` environment variable
+- [X] Use `DOCKER_HOST` environment variable
 - [X] Implement test hooks using `docker exec`
 - [ ] Support multiple port bindings
 - [ ] Tests!

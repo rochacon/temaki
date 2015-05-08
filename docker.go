@@ -3,14 +3,23 @@ package main
 import (
 	"fmt"
 	"net"
+	"os"
 	"time"
 
-	docker "github.com/fsouza/go-dockerclient"
 	"github.com/flynn/go-shlex"
+	"github.com/fsouza/go-dockerclient"
 )
 
+func dockerHost() string {
+	host := os.Getenv("DOCKER_HOST")
+	if host == "" {
+		return "unix://var/run/docker.sock"
+	}
+	return host
+}
+
 func LaunchContainer(name string, service Service, container chan<- *docker.Container, quit <-chan bool, finished chan<- bool) {
-	dcli, err := docker.NewClient("tcp://127.0.0.1:2375")
+	dcli, err := docker.NewClient(dockerHost())
 	if err != nil {
 		container <- nil
 		return
