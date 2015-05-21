@@ -137,6 +137,49 @@ func Exec(dcli *docker.Client, cID, cmd string) error {
 	return dcli.StartExec(exec.ID, docker.StartExecOptions{})
 }
 
+func RunTestSuite(image, command string, stdout, stderr io.Writer) error {
+	dcli, err := docker.NewClient(dockerHost())
+	if err != nil {
+		return err
+	}
+	cmd, err := shlex.Split(command)
+	if err != nil {
+		return err
+	}
+	c, err := dcli.CreateContainer(docker.CreateContainerOptions{
+		"",
+		&docker.Config{
+			Cmd:        cmd[1:],
+			Entrypoint: []string{cmd[0]},
+			Image:      image,
+		},
+		nil,
+	})
+	if err != nil {
+		return err
+	}
+	defer dcli.RemoveContainer(docker.RemoveContainerOptions{ID: c.ID})
+
+	if err := dcli.StartContainer(c.ID, &docker.HostConfig{}); err != nil {
+		return err
+	}
+	defer dcli.StopContainer(c.ID, 10)
+
+	logOpts := docker.LogsOptions{
+		Container:    c.ID,
+		Follow:       true,
+		Stdout:       true,
+		OutputStream: stdout,
+		Stderr:       true,
+		ErrorStream:  stderr,
+	}
+	if err := dcli.Logs(logOpts); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func firstPort(ports map[docker.Port][]docker.PortBinding) string {
 	for p := range ports {
 		return p.Port()
