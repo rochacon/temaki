@@ -30,6 +30,7 @@ func Build(name, dockerfile string, output io.Writer) error {
 		ContextDir:          filepath.Dir(dockerfile),
 		Dockerfile:          filepath.Base(dockerfile),
 		Name:                name,
+		RmTmpContainer:      true,
 		ForceRmTmpContainer: true,
 		OutputStream:        output,
 	}
