@@ -37,10 +37,10 @@ func main() {
 	fmt.Println("---> Creating test environment")
 
 	cmd_env := []string{}
-	finished := make(chan bool, len(conf.Env))
-	quit := make(chan bool, len(conf.Env))
+	finished := make(chan bool, len(conf.Services))
+	quit := make(chan bool, len(conf.Services))
 
-	for envvar, service := range conf.Env {
+	for envvar, service := range conf.Services {
 		// launch Docker container and pipe output with envvar prefix
 
 		new_container := make(chan *docker.Container)
@@ -78,12 +78,12 @@ func main() {
 	fmt.Println("---> Cleaning test environment")
 
 	// Send quit signal to test services
-	for x := 0; x < len(conf.Env); x++ {
+	for x := 0; x < len(conf.Services); x++ {
 		quit <- true
 	}
 
 	// Wait finished notification from test services
-	for x := 0; x < len(conf.Env); x++ {
+	for x := 0; x < len(conf.Services); x++ {
 		<-finished
 	}
 }

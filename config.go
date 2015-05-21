@@ -13,8 +13,8 @@ import (
 type Config struct {
 	Cmd        string
 	Dockerfile string
-	Env        map[string]Service
 	Name       string
+	Services   map[string]Service
 }
 
 type Service struct {

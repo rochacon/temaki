@@ -27,7 +27,9 @@ cmd: go test ./...
 dockerfile: ./Dockerfile
 -- Name of the Docker image
 image: my-app
-env:
+-- Dependant services (databases, cache, queues, etc.)
+-- Hooks are supported to facilitate test setup
+services:
   -- those are the environment variables that Temaki will set for you test suite
   DATABASE_URL:
     format: postgres://postgres:postgres@{{ .Host }}:{{ .Port }}/test?sslmode=disable
