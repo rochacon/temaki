@@ -70,7 +70,6 @@ func main() {
 	fmt.Println("---> Starting test suite:", conf.Cmd, "\n")
 	if err := RunTestSuite(conf.Name, conf.Cmd, os.Stdout, os.Stderr); err != nil {
 		fmt.Println(err)
-		os.Exit(1)
 	}
 	fmt.Println("") // Break line after test suite output
 
