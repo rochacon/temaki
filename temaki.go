@@ -36,7 +36,7 @@ func main() {
 	// Create test environment/services
 	fmt.Println("---> Creating test environment")
 
-	cmd_env := []string{}
+	testEnv := []string{}
 	finished := make(chan bool, len(conf.Services))
 	quit := make(chan bool, len(conf.Services))
 
@@ -63,12 +63,12 @@ func main() {
 		}
 
 		fmt.Printf("     %s=%q\n", envvar, formatted.String())
-		cmd_env = append(cmd_env, fmt.Sprintf("%s=%s", envvar, formatted.String()))
+		testEnv = append(testEnv, fmt.Sprintf("%s=%s", envvar, formatted.String()))
 	}
 
 	// Run test suite in container
 	fmt.Println("---> Starting test suite:", conf.Cmd, "\n")
-	if err := RunTestSuite(conf.Name, conf.Cmd, os.Stdout, os.Stderr); err != nil {
+	if err := RunTestSuite(conf.Name, conf.Cmd, testEnv, os.Stdout, os.Stderr); err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println("") // Break line after test suite output

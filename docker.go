@@ -138,7 +138,7 @@ func Exec(dcli *docker.Client, cID, cmd string) error {
 	return dcli.StartExec(exec.ID, docker.StartExecOptions{})
 }
 
-func RunTestSuite(image, command string, stdout, stderr io.Writer) error {
+func RunTestSuite(image, command string, env []string, stdout, stderr io.Writer) error {
 	dcli, err := docker.NewClient(dockerHost())
 	if err != nil {
 		return err
@@ -152,6 +152,7 @@ func RunTestSuite(image, command string, stdout, stderr io.Writer) error {
 		&docker.Config{
 			Cmd:        cmd[1:],
 			Entrypoint: []string{cmd[0]},
+			Env:        env,
 			Image:      image,
 		},
 		nil,
