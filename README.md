@@ -52,9 +52,3 @@ You may also specify the test suite command at runtime, like:
 temaki go test -cover -v ./handlers/...
 ```
 
-## TODO
-
-- [X] Use `DOCKER_HOST` environment variable
-- [X] Implement test hooks using `docker exec`
-- [ ] Support multiple port bindings
-- [ ] Tests!
