@@ -28,7 +28,7 @@ func main() {
 
 	// Build app container image
 	fmt.Println("---> Building container")
-	if err := Build(conf.Name, conf.Dockerfile, os.Stdout); err != nil {
+	if err := Build(conf.Image, conf.Dockerfile, os.Stdout); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -68,7 +68,7 @@ func main() {
 
 	// Run test suite in container
 	fmt.Println("---> Starting test suite:", conf.Cmd, "\n")
-	if err := RunTestSuite(conf.Name, conf.Cmd, testEnv, os.Stdout, os.Stderr); err != nil {
+	if err := RunTestSuite(conf.Image, conf.Cmd, testEnv, os.Stdout, os.Stderr); err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println("") // Break line after test suite output

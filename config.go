@@ -13,7 +13,7 @@ import (
 type Config struct {
 	Cmd        string
 	Dockerfile string
-	Name       string
+	Image      string
 	Services   map[string]Service
 }
 
