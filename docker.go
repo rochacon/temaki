@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/flynn/go-shlex"
@@ -16,6 +18,25 @@ func dockerHost() string {
 		return "unix://var/run/docker.sock"
 	}
 	return host
+}
+
+// Build builds a Dockerfile
+func Build(name, dockerfile string, output io.Writer) error {
+	dcli, err := docker.NewClient(dockerHost())
+	if err != nil {
+		return err
+	}
+	opts := docker.BuildImageOptions{
+		ContextDir:          filepath.Dir(dockerfile),
+		Dockerfile:          filepath.Base(dockerfile),
+		Name:                name,
+		ForceRmTmpContainer: true,
+		OutputStream:        output,
+	}
+	if err := dcli.BuildImage(opts); err != nil {
+		return err
+	}
+	return nil
 }
 
 func LaunchContainer(name string, service Service, container chan<- *docker.Container, quit <-chan bool, finished chan<- bool) {
