@@ -23,10 +23,14 @@ Here is a example of the config file
 ```yaml
 -- The command that run your test suite
 cmd: /usr/bin/env
+-- Dockerfile location
+dockerfile: ./Dockerfile
+-- The command that run your test suite
+image: my-app
 env:
   -- those are the environment variables that Temaki will set for you test suite
   DATABASE_URL:
-    format: postgres://postgres:postgres@{{ .Host }}:{{ .Port0 }}/test?sslmode=disable
+    format: postgres://postgres:postgres@{{ .Host }}:{{ .Port }}/test?sslmode=disable
     image: postgres:9.4
     port: 5432
     hooks:
@@ -35,7 +39,7 @@ env:
       post-run:
         - psql "DROP DATABASE test;"
   BROKER_URL:
-      format: amqp://guest@{{ .Host }}:{{ .Port0 }}/test
+      format: amqp://guest@{{ .Host }}:{{ .Port }}/test
       image: rabbitmq
 ```
 

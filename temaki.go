@@ -12,13 +12,11 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/flynn/go-shlex"
-	docker "github.com/fsouza/go-dockerclient"
 	"log"
 	"os"
-	"os/exec"
 	"text/template"
-	"time"
+
+	"github.com/fsouza/go-dockerclient"
 )
 
 func main() {
@@ -28,9 +26,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("---> Creating test environment for:", conf.Cmd)
+	// Build app container image
+	fmt.Println("---> Building container")
+	if err := Build(conf.Name, conf.Dockerfile, os.Stdout); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
-	cmd_env := []string{"GOPATH=/home/rochacon/dev"}
+	// Create test environment/services
+	fmt.Println("---> Creating test environment")
+
+	cmd_env := []string{}
 	finished := make(chan bool, len(conf.Env))
 	quit := make(chan bool, len(conf.Env))
 
@@ -47,11 +53,11 @@ func main() {
 		var fmt_tmpl = template.Must(template.New(envvar).Parse(service.Format))
 		formatted := bytes.NewBuffer([]byte{})
 		if err := fmt_tmpl.Execute(formatted, &struct {
-			Host  string
-			Port0 string
+			Host string
+			Port string
 		}{
-			Host:  container.NetworkSettings.IPAddress,
-			Port0: firstPort(container.NetworkSettings.Ports),
+			Host: container.NetworkSettings.IPAddress,
+			Port: firstPort(container.NetworkSettings.Ports),
 		}); err != nil {
 			panic(err)
 		}
@@ -60,29 +66,23 @@ func main() {
 		cmd_env = append(cmd_env, fmt.Sprintf("%s=%s", envvar, formatted.String()))
 	}
 
-	// Wait one second before test suite
-	// This avoids some race conditions with container scripts
-	time.Sleep(1 * time.Second)
-
-	fmt.Println("") // Break line before test suite output
-
-	// exec command
-	cmd_splitted, _ := shlex.Split(conf.Cmd)
-	cmd := exec.Command(cmd_splitted[0], cmd_splitted[1:]...)
-	cmd.Env = cmd_env
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	// Run test suite in container
+	fmt.Println("---> Starting test suite:", conf.Cmd, "\n")
+	if err := RunTestSuite(conf.Name, conf.Cmd, os.Stdout, os.Stderr); err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
-
 	fmt.Println("") // Break line after test suite output
 
+	// Destroy test environment/services
+	fmt.Println("---> Cleaning test environment")
+
+	// Send quit signal to test services
 	for x := 0; x < len(conf.Env); x++ {
 		quit <- true
 	}
 
-	fmt.Println("---> Cleaning test environment")
+	// Wait finished notification from test services
 	for x := 0; x < len(conf.Env); x++ {
 		<-finished
 	}
