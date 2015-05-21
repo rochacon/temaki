@@ -1,3 +1,3 @@
 cmd: go test -cover ./...
 dockerfile: ./Dockerfile
-image: temaki
+image: temaki:HEAD
