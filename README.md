@@ -22,10 +22,10 @@ Here is a example of the config file
 
 ```yaml
 -- The command that run your test suite
-cmd: /usr/bin/env
+cmd: go test ./...
 -- Dockerfile location
 dockerfile: ./Dockerfile
--- The command that run your test suite
+-- Name of the Docker image
 image: my-app
 env:
   -- those are the environment variables that Temaki will set for you test suite
