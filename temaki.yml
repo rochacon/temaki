@@ -1,0 +1,3 @@
+cmd: go test -cover ./...
+dockerfile: ./Dockerfile
+name: temaki
