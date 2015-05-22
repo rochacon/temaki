@@ -49,6 +49,7 @@ func main() {
 		if container == nil {
 			log.Fatalf("[%s] container not created.\n", envvar)
 		}
+		host, port, _ := getExposedHostAndPort(service.Port, container.NetworkSettings.Ports)
 
 		var fmt_tmpl = template.Must(template.New(envvar).Parse(service.Format))
 		formatted := bytes.NewBuffer([]byte{})
@@ -56,8 +57,8 @@ func main() {
 			Host string
 			Port string
 		}{
-			Host: container.NetworkSettings.IPAddress,
-			Port: firstPort(container.NetworkSettings.Ports),
+			Host: host,
+			Port: port,
 		}); err != nil {
 			panic(err)
 		}

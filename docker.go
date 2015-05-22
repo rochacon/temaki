@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/flynn/go-shlex"
@@ -51,6 +53,9 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 		"",
 		&docker.Config{
 			Env: service.Env,
+			ExposedPorts: map[docker.Port]struct{}{
+				docker.Port(service.Port + "/tcp"): struct{}{},
+			},
 			Image:     service.Image,
 			PortSpecs: []string{service.Port + "/tcp"},
 		},
@@ -62,7 +67,14 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 		return
 	}
 
-	if err := dcli.StartContainer(c.ID, &docker.HostConfig{}); err != nil {
+	err = dcli.StartContainer(c.ID, &docker.HostConfig{
+		PortBindings: map[docker.Port][]docker.PortBinding{
+			docker.Port(service.Port + "/tcp"): []docker.PortBinding{
+				docker.PortBinding{},
+			},
+		},
+	})
+	if err != nil {
 		fmt.Printf("[%s] %s\n", name, err.Error())
 		container <- nil
 		return
@@ -75,15 +87,22 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 		return
 	}
 
+	// Get exposed Host and Port
+	host, port, err := getExposedHostAndPort(service.Port, c.NetworkSettings.Ports)
+	if err != nil {
+		fmt.Printf("[%s] Unable to retrieve container Host and Port: %s\n", name, err.Error())
+		container <- nil
+		return
+	}
+
 	// Wait for port listen
 	for x := 0; ; x++ {
-		addr := fmt.Sprintf("%s:%s", c.NetworkSettings.IPAddress, firstPort(c.NetworkSettings.Ports))
+		addr := fmt.Sprintf("%s:%s", host, port)
 		if conn, err := net.Dial("tcp", addr); err == nil {
 			conn.Close()
 			break
 		}
 		time.Sleep(1 * time.Second)
-
 		if x == 10 {
 			fmt.Printf("[%s] max connection retries exceeded\n", name)
 			container <- nil
@@ -183,9 +202,29 @@ func RunTestSuite(image, command string, env []string, stdout, stderr io.Writer)
 	return nil
 }
 
-func firstPort(ports map[docker.Port][]docker.PortBinding) string {
-	for p := range ports {
-		return p.Port()
+// fixHostIfRemoteDaemon checks if DOCKER_HOST env is a remote host and
+// replaces the 0.0.0.0 with the remote host
+// If DOCKER_HOST is unix socket, return the received host
+func fixHostIfRemoteDaemon(host string) string {
+	dockerHost := dockerHost()
+	if host == "0.0.0.0" && strings.HasPrefix(dockerHost, "tcp://") {
+		u, err := url.Parse(dockerHost)
+		if err != nil {
+			return host
+		}
+		h, _, _ := net.SplitHostPort(u.Host)
+		return h
 	}
-	return ""
+	return host
+}
+
+// getExposedHostAndPort returns the exposed HostIP and HostPort for a given port binding
+func getExposedHostAndPort(port string, ports map[docker.Port][]docker.PortBinding) (string, string, error) {
+	for p, exposed := range ports {
+		if p.Port() != port {
+			continue
+		}
+		return fixHostIfRemoteDaemon(exposed[0].HostIP), exposed[0].HostPort, nil
+	}
+	return "", "", fmt.Errorf("Exposed Host/Port not found.")
 }
