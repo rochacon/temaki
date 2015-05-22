@@ -42,7 +42,8 @@ func Build(name, dockerfile string, output io.Writer) error {
 	return nil
 }
 
-func LaunchContainer(name string, service Service, container chan<- *docker.Container, quit <-chan bool, finished chan<- bool) {
+// LaunchService launches a Service
+func LaunchService(name string, service Service, container chan<- *docker.Container, quit <-chan bool, finished chan<- bool) {
 	dcli, err := docker.NewClient(dockerHost())
 	if err != nil {
 		container <- nil

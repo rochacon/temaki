@@ -44,7 +44,7 @@ func main() {
 		// launch Docker container and pipe output with envvar prefix
 
 		new_container := make(chan *docker.Container)
-		go LaunchContainer(envvar, service, new_container, quit, finished)
+		go LaunchService(envvar, service, new_container, quit, finished)
 		container := <-new_container
 		if container == nil {
 			log.Fatalf("[%s] container not created.\n", envvar)
