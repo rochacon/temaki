@@ -50,6 +50,7 @@ func LaunchContainer(name string, service Service, container chan<- *docker.Cont
 	c, err := dcli.CreateContainer(docker.CreateContainerOptions{
 		"",
 		&docker.Config{
+			Env: service.Env,
 			Image:     service.Image,
 			PortSpecs: []string{service.Port + "/tcp"},
 		},

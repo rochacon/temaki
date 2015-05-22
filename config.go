@@ -18,6 +18,7 @@ type Config struct {
 }
 
 type Service struct {
+	Env    []string
 	Format string
 	Image  string
 	Port   string
