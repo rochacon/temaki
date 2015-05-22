@@ -50,6 +50,7 @@ func LaunchService(name string, service Service, container chan<- *docker.Contai
 		return
 	}
 
+	// create service container
 	c, err := dcli.CreateContainer(docker.CreateContainerOptions{
 		"",
 		&docker.Config{
@@ -68,6 +69,7 @@ func LaunchService(name string, service Service, container chan<- *docker.Contai
 		return
 	}
 
+	// start container
 	err = dcli.StartContainer(c.ID, &docker.HostConfig{
 		PortBindings: map[docker.Port][]docker.PortBinding{
 			docker.Port(service.Port + "/tcp"): []docker.PortBinding{
@@ -81,6 +83,7 @@ func LaunchService(name string, service Service, container chan<- *docker.Contai
 		return
 	}
 
+	// get container info
 	c, err = dcli.InspectContainer(c.ID)
 	if err != nil {
 		fmt.Printf("[%s] %s\n", name, err.Error())
