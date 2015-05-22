@@ -1,0 +1,18 @@
+{
+	"ImportPath": "github.com/rochacon/temaki",
+	"GoVersion": "go1.4.2",
+	"Deps": [
+		{
+			"ImportPath": "github.com/flynn/go-shlex",
+			"Rev": "3f9db97f856818214da2e1057f8ad84803971cff"
+		},
+		{
+			"ImportPath": "github.com/fsouza/go-dockerclient",
+			"Rev": "b0f4fa94c14794e30cf3b9176e5dc4725d9552ed"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v1",
+			"Rev": "9f9df34309c04878acc86042b16630b0f696e1de"
+		}
+	]
+}
