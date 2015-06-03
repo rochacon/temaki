@@ -22,9 +22,30 @@ func dockerHost() string {
 	return host
 }
 
+// dockerClient returns a secured Docker Client, if DOCKER_CERT_PATH is present, or a insecure Docker Client.
+func dockerClient() (*docker.Client, error) {
+	if os.Getenv("DOCKER_CERT_PATH") != "" {
+		return dockerTLSClient()
+	}
+	return docker.NewClient(dockerHost())
+}
+
+// dockerTLSClient returns a secured Docker Client
+func dockerTLSClient() (*docker.Client, error) {
+	basePath := os.Getenv("DOCKER_CERT_PATH")
+	if basePath == "" {
+		return nil, fmt.Errorf("Empty DOCKER_CERT_PATH")
+	}
+	certPath := filepath.Join(basePath, "cert.pem")
+	keyPath := filepath.Join(basePath, "key.pem")
+	caPath := filepath.Join(basePath, "ca.pem")
+	endpoint := dockerHost()
+	return docker.NewTLSClient(endpoint, certPath, keyPath, caPath)
+}
+
 // Build builds a Dockerfile
 func Build(name, dockerfile string, output io.Writer) error {
-	dcli, err := docker.NewClient(dockerHost())
+	dcli, err := dockerClient()
 	if err != nil {
 		return err
 	}
@@ -44,7 +65,7 @@ func Build(name, dockerfile string, output io.Writer) error {
 
 // LaunchService launches a Service
 func LaunchService(name string, service Service, container chan<- *docker.Container, quit <-chan bool, finished chan<- bool) {
-	dcli, err := docker.NewClient(dockerHost())
+	dcli, err := dockerClient()
 	if err != nil {
 		container <- nil
 		return
@@ -163,7 +184,7 @@ func Exec(dcli *docker.Client, cID, cmd string) error {
 }
 
 func RunTestSuite(image, command string, env []string, stdout, stderr io.Writer) error {
-	dcli, err := docker.NewClient(dockerHost())
+	dcli, err := dockerClient()
 	if err != nil {
 		return err
 	}
